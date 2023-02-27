@@ -56,3 +56,21 @@ command.
  * `cdk docs`        open CDK documentation
 
 Enjoy!
+
+
+# git 子模块
+
+```shell
+
+# 添加
+
+git submodule add http://172.16.25.29/database-network/edit_sequence_design.git lambda/editor_sequence_design/editor_sequence_design
+
+git submodule add http://172.16.25.29/database-network/data_preprocessing.git ./lambda/data_preprocessing/data_preprocessing
+
+# 初始化
+
+git clone {root_project_url}
+git submodule update --init # 初始
+git submodule update --remote  # 更细到最新，该仓库不修改处理submodule
+```
