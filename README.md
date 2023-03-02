@@ -68,6 +68,8 @@ git submodule add http://172.16.25.29/database-network/edit_sequence_design.git 
 
 git submodule add http://172.16.25.29/database-network/data_preprocessing.git ./lambda/data_preprocessing/data_preprocessing
 
+git submodule add http://172.16.25.29/database-network/chopchop.git ./lambda/chopchop
+
 # 初始化
 
 git clone {root_project_url}

@@ -15,7 +15,7 @@ from aws_cdk import (
 from constructs import Construct
 from chopchop_crispr_cdk.construct.lambda_construct import LambdaConstruct
 from chopchop_crispr_cdk.construct.s3_construct import S3Construct
-
+from chopchop_crispr_cdk.construct.iam_construct import IamConstruct
 class ChopchopCrisprCdkStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, Stage="default", **kwargs) -> None:
@@ -36,4 +36,11 @@ class ChopchopCrisprCdkStack(Stack):
             "lambda-construct",
             TargetS3 = self.My_S3_Bucket,
             Stage=Stage,
+        )
+
+
+        self.My_Iam = IamConstruct(
+            self,
+            "Iam-construct",
+            TargetS3 = self.My_S3_Bucket
         )

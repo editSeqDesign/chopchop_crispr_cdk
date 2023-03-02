@@ -4,3 +4,4 @@
 [submodule "lambda/editor_sequence_design/editor_sequence_design"]
 	path = lambda/editor_sequence_design/editor_sequence_design
 	url = http://172.16.25.29/database-network/edit_sequence_design.git
+

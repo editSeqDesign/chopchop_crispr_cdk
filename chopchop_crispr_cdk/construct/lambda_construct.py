@@ -32,6 +32,7 @@ class LambdaConstruct(Construct):
         value = conf.get(part,name)
         print(value)
         return value
+      
     def __init__(self,scope:Construct,id:str,TargetS3 = "default",TargetDdb="default",TargetSqs="default",TargetSfn="default",Stage="default",**kwargs):
         super().__init__(scope, id, **kwargs)
 
@@ -102,8 +103,31 @@ class LambdaConstruct(Construct):
                 "s3Result":TargetS3.get_s3_bucket('result').bucket_name,
             }
         )
+
+
+
+
+         # chopchop
+        # docker function
+        self.chopchop = _lambda.DockerImageFunction(
+            self,
+            'DockerImageFunc',
+            function_name='docker-chopchop',
+            code=_lambda.DockerImageCode.from_image_asset( 
+                directory=f'{os.path.abspath(os.path.join(os.getcwd()))}/lambda/chopchop', 
+                file='logicDockerfile'
+            ),
+            role=self.lambda_role,
+            memory_size=1024,
+            timeout=Duration.seconds(60),
+            environment={
+                "s3Result":TargetS3.get_s3_bucket("result").bucket_name,
+            }
+        )
+
         self.lambda_functions["data_preprocessing"] = self.data_preprocessing
         self.lambda_functions["editor_sequence_design"] = self.editor_sequence_design
-        
+        self.lambda_functions["chopchop"] = self.chopchop
+
     def get_lambda_functions(self,name):
         return self.lambda_functions[name]
