@@ -5,3 +5,6 @@
 	path = lambda/editor_sequence_design/editor_sequence_design
 	url = http://172.16.25.29/database-network/edit_sequence_design.git
 
+[submodule "lambda/chopchop"]
+	path = lambda/chopchop
+	url = http://172.16.25.29/database-network/chopchop.git
