@@ -1,5 +1,8 @@
 import os
 import sys
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+MODULE_DIR = os.path.join(ROOT_DIR,"editor_sequence_design")
+sys.path.append(MODULE_DIR)
 import boto3
 import uuid
 
@@ -7,10 +10,13 @@ import pandas as pd
 import xlsxwriter
 from Bio import SeqIO
 
-from edit_sequence_design import main as edit_sd
+from editor_sequence_design import main as edit_sd
 
 result_bucket = os.environ["s3Result"]
 s3 = boto3.resource('s3')
+
+dynamodb = boto3.resource('dynamodb',region_name=os.environ['AWS_DEFAULT_REGION'])
+result_table = dynamodb.Table(os.environ['ddbResult'])
 
 def download_s3_file(s3_file,workdir):
     """
@@ -116,25 +122,49 @@ def lambda_handler(event,context):
         os.mkdir(workdir)
         os.chdir(workdir)
         event["edit_sequence_design_workdir"] = workdir
-        
+        # 根据chopchop_jobid获取chopchop_input，sgRNA_result_path，ref_genome
+        # check chopchop_jobid 
+        chopchop_jobid = event["chopchop_jobid"]
+        response = result_table.get_item(Key={'jobid':chopchop_jobid })
+        if not 'Item' in response:
+            raise ValueError(f"The chopchop jobid {chopchop_jobid} is not exists.")
+        else:
+            if response['Item']['status'] != "Finished":
+                raise ValueError(f"The chopchop jobid {chopchop_jobid} is {response['Item']['status']}, can not be used to run edit sequence design")
+
+        event["chopchop_input"] = response['Item']['output']["data"]
+        event["sgRNA_result_path"] = response['Item']['output']["chopchop"]
+        event["ref_genome"] = response['Item']['params']["data"]["ref_genome"]
         #下载数据 并重置参数
-        keys = [
-            "chopchop_input","sgRNA_result_path","one_plasmid_file_path",
-            "no_ccdb_plasmid","no_sgRNA_plasmid",
+        keys = ["chopchop_input","sgRNA_result_path","ref_genome",      "one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
         ]
         for key in keys:
-            event[key] = download_s3_file(event[key],workdir)
+            if event[key]:
+                print(key,event[key])
+                event[key] = download_s3_file(event[key],workdir)
         
-        output_file = edit_sd.main(event)
-        
-        # 上传结果文件
-        output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
-        s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
-        print(f'upload result file: {output_file_key} ')
-        return {
-            "statusCode":200,
-            "data":output_file
-        }
+        response = edit_sd.main(event)
+        if isinstance(response,str):
+            # 上传结果文件
+            output_file = response
+            output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
+            s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
+            print(f'upload result file: {output_file_key} ')
+            return {
+                "statusCode":200,
+                "output_file":[f"s3://{result_bucket}/{output_file_key}"]
+            }
+        elif isinstance(response,tuple):
+            output_file_list =[]
+            for output_file in response:
+                output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
+                s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
+                print(f'upload result file: {output_file_key} ')
+                output_file_list.append(f"s3://{result_bucket}/{output_file_key}")
+            return {
+                "statusCode":200,
+                "output_file":output_file_list
+            }
     except Exception as e:
         print(e)
         return {
@@ -148,5 +178,95 @@ def lambda_handler(event,context):
     
 if __name__ == "__main__":
     event = {
+        "chopchop_jobid":"8484bfd6-6919-441b-bf85-e8b6f023021b",
+        "one_plasmid_file_path": "s3://chopchop-prod/pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
+        "no_ccdb_plasmid":"s3://chopchop-prod//no-ccdb-pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
+        "no_sgRNA_plasmid":"s3://chopchop-prod/no-sgRNA-pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
+        "uha_dha_config": {
+            "max_right_arm_seq_length": 1050,
+            "max_left_arm_seq_length": 1050,
+            "min_left_arm_seq_length": 1000,   
+            "min_right_arm_seq_length": 1000
+        },
+
         
+        "plasmid_label":{
+            "ccdb_label":"ccdB",
+            "promoter_terminator_label":"gRNA",
+            "n_20_label":"N20"
+        },
+        
+        "sgRNA_primer_json":{
+            "primer3":"AACTATTTATCCAGTTGGTACAAAC"
+        },
+        "ccdb_primer_json":{
+            "primer3":"AACTGATTCAGTCTGATTTCGCGGT"
+        },
+    
+        "sgRNA_region_json":{
+            "region1":"tgtgtggaattgtgagcggataacaatttcacacaggaaacagaatt"
+        },
+        
+        "ccdb_region_json":{
+            "region1":"ATTGTGAGCGGATAACAATTTCACACAGGAAACAGAATTAATTAAGCTTAAAGGAGTTGAGAATGGATAAGAAATACTCAATAGGCTTAGATATCGGCACAAATAGCGTCGGATGGGCGGTGATC"
+        },
+        
+        "enzyme":{
+            "enzyme_name":"BsaI",
+            "gap_sequence":"A",
+            "protection_sequence":"CCA"
+        },
+        
+        "UHA_ARGS":{
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,
+            "PRIMER_MAX_TM": 75,
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        },
+        "SEQ_ALTERED_ARGS":{
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,
+            "PRIMER_MAX_TM": 75,  
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        },
+        "DHA_ARGS":{
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,
+            "PRIMER_MAX_TM": 75,
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        },
+        "UP_SGRNA_ARGS":{
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,
+            "PRIMER_MAX_TM": 75,
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        },
+        "DOWN_SGRNA_ARGS": {
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,
+            "PRIMER_MAX_TM": 75,
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        },
+
+        "PLASMID_Q_ARGS":{
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,  
+            "PRIMER_MAX_TM": 75,    
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        },
+        "GENOME_Q_ARGS":{
+            "PRIMER_OPT_TM": 65,
+            "PRIMER_MIN_TM": 55,  
+            "PRIMER_MAX_TM": 75,    
+            "PRIMER_MIN_GC": 20,
+            "PRIMER_MAX_GC": 80
+        }
     }
+    
+    print(lambda_handler(event,{}))

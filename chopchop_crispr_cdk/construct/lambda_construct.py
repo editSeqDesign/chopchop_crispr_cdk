@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:24:52
 LastEditors: wangruoyu
-LastEditTime: 2023-02-16 06:11:06
+LastEditTime: 2023-03-09 07:36:45
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/lambda_construct.py
 '''
@@ -56,6 +56,10 @@ class LambdaConstruct(Construct):
 
         # access to s3
         TargetS3.get_s3_bucket("result").grant_read_write(self.lambda_role)
+        TargetS3.get_s3_bucket("result").grant_put_acl(self.lambda_role)
+
+        # access to ddb 
+        TargetDdb.get_dynamodb_tables('result').grant_full_access(self.lambda_role)
         
         ####### layers #######
         # layer
@@ -96,10 +100,11 @@ class LambdaConstruct(Construct):
             code = _lambda.Code.from_asset('lambda/editor_sequence_design'),
             role=self.lambda_role,
             handler="app.lambda_handler",
-            timeout=Duration.seconds(30),
+            timeout=Duration.seconds(120),
             layers=[blastn_layer,biopython_pandas_layer],
-            memory_size=128,
+            memory_size=1024,
             environment={
+                "ddbResult":TargetDdb.get_dynamodb_tables('result').table_name,
                 "s3Result":TargetS3.get_s3_bucket('result').bucket_name,
             }
         )
@@ -125,9 +130,27 @@ class LambdaConstruct(Construct):
             }
         )
 
+        # job status
+        self.job_status = _lambda.Function(
+            self,
+            "job_status",
+            runtime =_lambda.Runtime.PYTHON_3_8,
+            code = _lambda.Code.from_asset('lambda/job_status'),
+            role=self.lambda_role,
+            handler="app.lambda_handler",
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            environment={
+                "ddbResult":TargetDdb.get_dynamodb_tables('result').table_name,
+            }
+        )
+
+        
         self.lambda_functions["data_preprocessing"] = self.data_preprocessing
         self.lambda_functions["editor_sequence_design"] = self.editor_sequence_design
         self.lambda_functions["chopchop"] = self.chopchop
+        self.lambda_functions["job_status"] = self.job_status
+        
 
     def get_lambda_functions(self,name):
         return self.lambda_functions[name]
