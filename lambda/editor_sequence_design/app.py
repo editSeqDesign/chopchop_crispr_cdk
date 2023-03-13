@@ -13,6 +13,8 @@ from Bio import SeqIO
 from editor_sequence_design import main as edit_sd
 
 result_bucket = os.environ["s3Result"]
+reference_bucket = os.environ["s3Reference"]
+
 s3 = boto3.resource('s3')
 
 dynamodb = boto3.resource('dynamodb',region_name=os.environ['AWS_DEFAULT_REGION'])
@@ -141,6 +143,9 @@ def lambda_handler(event,context):
         for key in keys:
             if event[key]:
                 print(key,event[key])
+                if key == "ref_genome":
+                    if event["ref_genome"].startswith('reference/'):
+                        event[key] = f"s3://{reference_bucket}/{event['ref_genome']}" 
                 event[key] = download_s3_file(event[key],workdir)
         
         response = edit_sd.main(event)

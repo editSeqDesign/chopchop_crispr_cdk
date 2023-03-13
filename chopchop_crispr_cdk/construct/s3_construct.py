@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:25:20
 LastEditors: wangruoyu
-LastEditTime: 2023-02-16 05:25:39
+LastEditTime: 2023-03-13 02:14:05
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/s3_construct.py
 '''
@@ -41,8 +41,14 @@ class S3Construct(Construct):
             'result',
             bucket_name = self.read_config(Stage,'result-bucket')
         )
-        
+        self.reference_bucket = _s3.Bucket.from_bucket_name(
+            self,
+            'reference',
+            bucket_name = self.read_config(Stage,'reference-bucket')
+        )
+
         self.buckets['result'] = self.result_bucket
+        self.buckets['reference'] = self.reference_bucket
         
     
     def get_s3_bucket(self,name):

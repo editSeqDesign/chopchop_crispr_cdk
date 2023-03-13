@@ -108,7 +108,12 @@
             "promoter_terminator_label":"gRNA",
             "n_20_label":"N20"
         },
-        
+        "primer_json":{
+            "primer3":"AACTATTTATCCAGTTGGTACAAAC"
+        },
+        "region_json":{
+            "region1":"AACTGATTCAGTCTGATTTCGCGGT"
+        },
         "sgRNA_primer_json":{
             "primer3":"AACTATTTATCCAGTTGGTACAAAC"
         },

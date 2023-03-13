@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:38:18
 LastEditors: wangruoyu
-LastEditTime: 2023-03-09 03:17:48
+LastEditTime: 2023-03-13 02:21:28
 Description: file content
 FilePath: /chopchop_crispr_cdk/lambda/data_preprocessing/app.py
 '''
@@ -19,6 +19,7 @@ from Bio import SeqIO
 from data_preprocessing import parse_input_to_df as data_pp
 
 result_bucket = os.environ["s3Result"]
+reference_bucket = os.environ["s3Reference"]
 s3 = boto3.resource('s3')
 
 def download_s3_file(s3_file,workdir):
@@ -73,6 +74,8 @@ def lambda_handler(event,context):
         
         #下载数据 并重置参数
         event["input_file_path"] = download_s3_file(event["input_file_path"],workdir)
+        if event["ref_genome"].startswith('reference/'):
+            event["ref_genome"] = f"s3://{reference_bucket}/{event['ref_genome']}" 
         event["ref_genome"] = download_s3_file(event["ref_genome"],workdir)
         
         output_file = data_pp.main(event)
