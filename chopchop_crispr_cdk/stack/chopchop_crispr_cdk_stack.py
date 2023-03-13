@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:29:38
 LastEditors: wangruoyu
-LastEditTime: 2023-03-09 02:54:31
+LastEditTime: 2023-03-13 01:39:19
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/stack/chopchop_crispr_cdk_stack.py
 '''
@@ -76,5 +76,6 @@ class ChopchopCrisprCdkStack(Stack):
         self.My_Iam = IamConstruct(
             self,
             "Iam-construct",
-            TargetS3 = self.My_S3_Bucket
+            TargetS3 = self.My_S3_Bucket,
+            TargetApiGateway=self.My_api
         )
