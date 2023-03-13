@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:24:52
 LastEditors: wangruoyu
-LastEditTime: 2023-03-13 02:14:56
+LastEditTime: 2023-03-13 05:37:13
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/lambda_construct.py
 '''
@@ -127,7 +127,7 @@ class LambdaConstruct(Construct):
             ),
             role=self.lambda_role,
             memory_size=1024,
-            timeout=Duration.seconds(60),
+            timeout=Duration.minutes(10),
             environment={
                 "s3Result":TargetS3.get_s3_bucket("result").bucket_name,
                 "s3Reference":TargetS3.get_s3_bucket('reference').bucket_name,

@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-03-08 06:58:16
 LastEditors: wangruoyu
-LastEditTime: 2023-03-10 06:42:42
+LastEditTime: 2023-03-13 03:18:57
 Description: file content
 FilePath: /chopchop_crispr_cdk/lambda/job_manager/app.py
 '''
@@ -24,12 +24,14 @@ def api_response(statuscode,data):
     response = {
         "statusCode": statuscode,
         "headers":{
-            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key',
+            'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
         },
         "body": json.dumps(data)
     }
     return response
+
 
 def ddb_item_dict(jobid,params,stype="chopchop"):
     dictall = {}

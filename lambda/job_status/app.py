@@ -55,21 +55,25 @@ def lambda_handler(event,context):
     status = "Finished"
     output_dict = {}
     msg = ""
-    for module in event["result"]:
-        statusCode = event["result"][module]['Payload']["statusCode"]
-        if statusCode == 200:
-            output_file = event["result"][module]['Payload']["output_file"]
-            output_dict[module] = output_file
-            if module == "chopchop":
-                obj_key = "/".join(output_file.split('/')[3:])
-                result.append(obj_key)
-            elif module == 'edit':
-                for i in output_file:
-                    obj_key = "/".join(i.split('/')[3:])
+    if "error" in event:
+        msg = event["error"]["Cause"]
+        status = "Failed"
+    else:
+        for module in event["result"]:
+            statusCode = event["result"][module]['Payload']["statusCode"]
+            if statusCode == 200:
+                output_file = event["result"][module]['Payload']["output_file"]
+                output_dict[module] = output_file
+                if module == "chopchop":
+                    obj_key = "/".join(output_file.split('/')[3:])
                     result.append(obj_key)
-        elif statusCode == 500:
-            msg += event["result"][module]['Payload']["msg"] +"; "
-            status = "Failed"
+                elif module == 'edit':
+                    for i in output_file:
+                        obj_key = "/".join(i.split('/')[3:])
+                        result.append(obj_key)
+            elif statusCode == 500:
+                msg += event["result"][module]['Payload']["msg"] +"; "
+                status = "Failed"
     
     # update ddb item
     print(update_item(event["jobid"],result,output_dict,status,msg))

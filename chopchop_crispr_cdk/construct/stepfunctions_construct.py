@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-03-08 07:06:43
 LastEditors: wangruoyu
-LastEditTime: 2023-03-09 07:00:14
+LastEditTime: 2023-03-13 05:18:49
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/stepfunctions_construct.py
 '''
@@ -66,6 +66,22 @@ class SfnConstruct(Construct):
                 }),
                 result_path="$.Result.job_status"
             )
+        # catch error
+        error_task = sfn_tasks.LambdaInvoke(
+                self,
+                "job error",
+                lambda_function = TargetLambda.get_lambda_functions("job_status"),
+                payload= sfn.TaskInput.from_object({
+                    "error": sfn.JsonPath.string_at("$.error"),
+                    "jobid": sfn.JsonPath.string_at("$.jobid"),
+                    
+                }),
+                result_path="$.Result.job_status"
+            )
+        chopchop_task.add_catch(
+            error_task,
+            result_path = "$.error"
+        )
         # chain
         chopchop_chain = sfn.Chain.start(data_preprocessing_task) \
                 .next(chopchop_task) \
