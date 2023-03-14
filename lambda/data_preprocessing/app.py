@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:38:18
 LastEditors: wangruoyu
-LastEditTime: 2023-03-13 02:21:28
+LastEditTime: 2023-03-14 05:19:38
 Description: file content
 FilePath: /chopchop_crispr_cdk/lambda/data_preprocessing/app.py
 '''
@@ -62,41 +62,37 @@ def lambda_handler(event,context):
     }
     """
     print(event)
-    try:
-        # 读写路径
-        jobid = event["jobid"]
-        workdir = f'/tmp/{jobid}'
-        print(f'working dir: {workdir}')
-        if not os.path.exists(workdir):
-            os.mkdir(workdir)
-        os.chdir(workdir)
-        event["data_preprocessing_workdir"] = workdir
-        
-        #下载数据 并重置参数
-        event["input_file_path"] = download_s3_file(event["input_file_path"],workdir)
-        if event["ref_genome"].startswith('reference/'):
-            event["ref_genome"] = f"s3://{reference_bucket}/{event['ref_genome']}" 
-        event["ref_genome"] = download_s3_file(event["ref_genome"],workdir)
-        
-        output_file = data_pp.main(event)
-        
-        # 上传结果文件
-        output_file_key = f"result/{jobid}/data/{output_file.split('/')[-1]}"
-        s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
-        print(f'upload result file: {output_file_key} ')
-        return {
-            "statusCode":200,
-            "output_file":f"s3://{result_bucket}/{output_file_key}"
-        }
-    except Exception as e:
-        print(e)
-        return {
-            "statusCode":500,
-            "msg":str(e)
-        }
-    finally:
-        os.system(f'rm -rf {workdir}')
-        print(f"delete working dir: {workdir}")
+    
+    jobid = event["jobid"]
+    workdir = f'/tmp/{jobid}'
+    print(f'working dir: {workdir}')
+    if not os.path.exists(workdir):
+        os.mkdir(workdir)
+    os.chdir(workdir)
+    event["data_preprocessing_workdir"] = workdir
+    
+    #下载数据 并重置参数
+    event["input_file_path"] = download_s3_file(event["input_file_path"],workdir)
+    if event["ref_genome"].startswith('reference/'):
+        event["ref_genome"] = f"s3://{reference_bucket}/{event['ref_genome']}" 
+    event["ref_genome"] = download_s3_file(event["ref_genome"],workdir)
+    
+    output_file = data_pp.main(event)
+    
+    # 上传结果文件
+    output_file_key = f"result/{jobid}/data/{output_file.split('/')[-1]}"
+    s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
+    print(f'upload result file: {output_file_key} ')
+    
+    # delete workdir
+    os.system(f'rm -rf {workdir}')
+    print(f"delete working dir: {workdir}")
+    
+    return {
+        "statusCode":200,
+        "output_file":f"s3://{result_bucket}/{output_file_key}"
+    }
+    
     
     
 if __name__ == "__main__":

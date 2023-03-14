@@ -91,7 +91,7 @@
 # 1.如果提供jobid，chopchop_input，sgRNA_result_path，ref_genome的值可以缺省
 # 2.用户自定义上传，需要提供chopchop_input，sgRNA_result_path，ref_genome，并执行data模块
 {
-        "chopchop_jobid":"6787a2cf-0a42-4bff-ad05-89d24e7e81fa",
+        "chopchop_jobid":"9241b061-cae0-4414-80ff-074a80ba8943",
         "one_plasmid_file_path": "s3://chopchop-prod/pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
         "no_ccdb_plasmid":"s3://chopchop-prod/no-ccdb-pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
         "no_sgRNA_plasmid":"s3://chopchop-prod/no-sgRNA-pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
@@ -184,7 +184,18 @@
             "PRIMER_MAX_TM": 75,    
             "PRIMER_MIN_GC": 20,
             "PRIMER_MAX_GC": 80
-        }
+        },
+        "sgRNA_result":{
+            "Cgl0006_1176_G_A_sub":"1",
+            "Cgl2342_213_GCA_ins":"2",
+            "Cgl1436_1113_CAA_del":"3",
+            "Cgl1790_1647_TCC_sub":"1",
+            "Cgl1386_327_18to15_sub":"1",
+            "Cgl0591_-1_Ppgk_promoter_ins":"1",
+            "Cgl0141_cds_del":"1",
+            "153019_ecoil_ybeL_ins":"1",
+            "Cgl0851_ecoli_pgi_sub":"1"
+      }
     }
 ```
 

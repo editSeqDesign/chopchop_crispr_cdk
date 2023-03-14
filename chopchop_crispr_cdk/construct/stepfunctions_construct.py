@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-03-08 07:06:43
 LastEditors: wangruoyu
-LastEditTime: 2023-03-13 05:18:49
+LastEditTime: 2023-03-14 05:41:51
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/stepfunctions_construct.py
 '''
@@ -24,6 +24,18 @@ class SfnConstruct(Construct):
 
         self.step_functions = {}
         
+        # error task
+        error_task = sfn_tasks.LambdaInvoke(
+                self,
+                "job error",
+                lambda_function = TargetLambda.get_lambda_functions("job_status"),
+                payload= sfn.TaskInput.from_object({
+                    "error": sfn.JsonPath.string_at("$.error"),
+                    "jobid": sfn.JsonPath.string_at("$.jobid"),
+                    
+                }),
+                result_path="$.Result.job_status"
+            )
         
         #########################
         # chopchop stepfunctions
@@ -40,7 +52,10 @@ class SfnConstruct(Construct):
                 }),
                 result_path="$.Result.data"
             )
-
+        data_preprocessing_task.add_catch(
+            error_task,
+            result_path = "$.error"
+        )
         # 2. chopchop 
         chopchop_task = sfn_tasks.LambdaInvoke(
                 self,
@@ -67,17 +82,6 @@ class SfnConstruct(Construct):
                 result_path="$.Result.job_status"
             )
         # catch error
-        error_task = sfn_tasks.LambdaInvoke(
-                self,
-                "job error",
-                lambda_function = TargetLambda.get_lambda_functions("job_status"),
-                payload= sfn.TaskInput.from_object({
-                    "error": sfn.JsonPath.string_at("$.error"),
-                    "jobid": sfn.JsonPath.string_at("$.jobid"),
-                    
-                }),
-                result_path="$.Result.job_status"
-            )
         chopchop_task.add_catch(
             error_task,
             result_path = "$.error"
@@ -107,6 +111,8 @@ class SfnConstruct(Construct):
                     "no_sgRNA_plasmid": sfn.JsonPath.string_at("$.no_sgRNA_plasmid"),
                     "uha_dha_config": sfn.JsonPath.string_at("$.uha_dha_config"),
                     "plasmid_label": sfn.JsonPath.string_at("$.plasmid_label"),
+                    "primer_json": sfn.JsonPath.string_at("$.primer_json"),
+                    "region_json": sfn.JsonPath.string_at("$.region_json"),
                     "sgRNA_primer_json": sfn.JsonPath.string_at("$.sgRNA_primer_json"),
                     "ccdb_primer_json": sfn.JsonPath.string_at("$.ccdb_primer_json"),
                     "sgRNA_region_json": sfn.JsonPath.string_at("$.sgRNA_region_json"),
@@ -119,6 +125,7 @@ class SfnConstruct(Construct):
                     "DOWN_SGRNA_ARGS": sfn.JsonPath.string_at("$.DOWN_SGRNA_ARGS"),
                     "PLASMID_Q_ARGS": sfn.JsonPath.string_at("$.PLASMID_Q_ARGS"),
                     "GENOME_Q_ARGS": sfn.JsonPath.string_at("$.GENOME_Q_ARGS"),
+                    "sgRNA_result": sfn.JsonPath.string_at("$.sgRNA_result"),
                     "jobid": sfn.JsonPath.string_at("$.jobid"),
                 }),
                 result_path="$.Result.edit"

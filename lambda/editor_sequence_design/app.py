@@ -135,7 +135,7 @@ def lambda_handler(event,context):
                 raise ValueError(f"The chopchop jobid {chopchop_jobid} is {response['Item']['status']}, can not be used to run edit sequence design")
 
         event["chopchop_input"] = response['Item']['output']["data"]
-        event["sgRNA_result_path"] = response['Item']['output']["chopchop"]
+        event["sgRNA_result_path"] = response['Item']['output']["chopchop"][1]
         event["ref_genome"] = response['Item']['params']["data"]["ref_genome"]
         #下载数据 并重置参数
         keys = ["chopchop_input","sgRNA_result_path","ref_genome",      "one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
