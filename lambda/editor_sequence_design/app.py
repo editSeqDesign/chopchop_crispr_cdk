@@ -153,7 +153,7 @@ def lambda_handler(event,context):
             # 上传结果文件
             output_file = response
             output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
-            s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
+            s3.meta.client.upload_file(output_file, result_bucket, output_file_key,ExtraArgs={'ACL': "public-read"})
             print(f'upload result file: {output_file_key} ')
             return {
                 "statusCode":200,
@@ -163,7 +163,7 @@ def lambda_handler(event,context):
             output_file_list =[]
             for output_file in response:
                 output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
-                s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
+                s3.meta.client.upload_file(output_file, result_bucket, output_file_key,ExtraArgs={'ACL': "public-read"})
                 print(f'upload result file: {output_file_key} ')
                 output_file_list.append(f"s3://{result_bucket}/{output_file_key}")
             return {
@@ -183,95 +183,104 @@ def lambda_handler(event,context):
     
 if __name__ == "__main__":
     event = {
-        "chopchop_jobid":"8484bfd6-6919-441b-bf85-e8b6f023021b",
-        "one_plasmid_file_path": "s3://chopchop-prod/pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
-        "no_ccdb_plasmid":"s3://chopchop-prod//no-ccdb-pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
-        "no_sgRNA_plasmid":"s3://chopchop-prod/no-sgRNA-pXMJ19-Cas9A-gRNA-crtYEb-Ts - ori.gb",
-        "uha_dha_config": {
-            "max_right_arm_seq_length": 1050,
-            "max_left_arm_seq_length": 1050,
-            "min_left_arm_seq_length": 1000,   
-            "min_right_arm_seq_length": 1000
-        },
-
-        
-        "plasmid_label":{
-            "ccdb_label":"ccdB",
-            "promoter_terminator_label":"gRNA",
-            "n_20_label":"N20"
-        },
-        
-        "sgRNA_primer_json":{
-            "primer3":"AACTATTTATCCAGTTGGTACAAAC"
-        },
-        "ccdb_primer_json":{
-            "primer3":"AACTGATTCAGTCTGATTTCGCGGT"
-        },
-    
-        "sgRNA_region_json":{
-            "region1":"tgtgtggaattgtgagcggataacaatttcacacaggaaacagaatt"
-        },
-        
-        "ccdb_region_json":{
-            "region1":"ATTGTGAGCGGATAACAATTTCACACAGGAAACAGAATTAATTAAGCTTAAAGGAGTTGAGAATGGATAAGAAATACTCAATAGGCTTAGATATCGGCACAAATAGCGTCGGATGGGCGGTGATC"
-        },
-        
-        "enzyme":{
-            "enzyme_name":"BsaI",
-            "gap_sequence":"A",
-            "protection_sequence":"CCA"
-        },
-        
-        "UHA_ARGS":{
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,
-            "PRIMER_MAX_TM": 75,
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        },
-        "SEQ_ALTERED_ARGS":{
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,
-            "PRIMER_MAX_TM": 75,  
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        },
-        "DHA_ARGS":{
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,
-            "PRIMER_MAX_TM": 75,
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        },
-        "UP_SGRNA_ARGS":{
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,
-            "PRIMER_MAX_TM": 75,
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        },
-        "DOWN_SGRNA_ARGS": {
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,
-            "PRIMER_MAX_TM": 75,
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        },
-
-        "PLASMID_Q_ARGS":{
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,  
-            "PRIMER_MAX_TM": 75,    
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        },
-        "GENOME_Q_ARGS":{
-            "PRIMER_OPT_TM": 65,
-            "PRIMER_MIN_TM": 55,  
-            "PRIMER_MAX_TM": 75,    
-            "PRIMER_MIN_GC": 20,
-            "PRIMER_MAX_GC": 80
-        }
-    }
+    "chopchop_jobid": "e952af24-0e18-4cdb-97b4-f6cee77e8ded",
+    "one_plasmid_file_path": "s3://chopchop-prod/public/1678777751777/single.gb",
+    "no_ccdb_plasmid": "",
+    "no_sgRNA_plasmid": "",
+    "sgRNA_result": {
+      "Cgl1386_327_18to15_sub": 1,
+      "Cgl1436_1113_CAA_del": 1,
+      "153019_ecoil_ybeL_ins": 1,
+      "Cgl0141_cds_del": 1,
+      "Cgl1790_1647_TCC_sub": 1,
+      "Cgl2342_213_GCA_ins": 1,
+      "Cgl0591_-1_Ppgk_promoter_ins": 1,
+      "Cgl0006_1176_G_A_sub": 1,
+      "Cgl0851_ecoli_pgi_sub": 1
+    },
+    "uha_dha_config": {
+      "max_right_arm_seq_length": 1050,
+      "max_left_arm_seq_length": 1050,
+      "min_left_arm_seq_length": 1000,
+      "min_right_arm_seq_length": 1000
+    },
+    "plasmid_label": {
+      "ccdb_label": "ccdB",
+      "promoter_terminator_label": "gRNA",
+      "n_20_label": "N20"
+    },
+    "primer_json": {
+      
+    },
+    "region_json": {
+      
+    },
+    "sgRNA_primer_json": {
+      
+    },
+    "ccdb_primer_json": {
+      
+    },
+    "sgRNA_region_json": {
+      
+    },
+    "ccdb_region_json": {
+      
+    },
+    "enzyme": {
+      "enzyme_name": "BsaI",
+      "gap_sequence": "A",
+      "protection_sequence": "CCA"
+    },
+    "UHA_ARGS": {
+      "PRIMER_OPT_TM": 60,
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "SEQ_ALTERED_ARGS": {
+      "PRIMER_OPT_TM": 60,
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "DHA_ARGS": {
+      "PRIMER_OPT_TM": 55,
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "UP_SGRNA_ARGS": {
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "DOWN_SGRNA_ARGS": {
+      "PRIMER_OPT_TM": 60,
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "PLASMID_Q_ARGS": {
+      "PRIMER_OPT_TM": 60,
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "GENOME_Q_ARGS": {
+      "PRIMER_OPT_TM": 60,
+      "PRIMER_MIN_TM": 55,
+      "PRIMER_MAX_TM": 65,
+      "PRIMER_MIN_GC": 30,
+      "PRIMER_MAX_GC": 70
+    },
+    "jobid": "8d14d0ed-dca3-4bbc-9906-9278ccbba95f"
+  }
     
     print(lambda_handler(event,{}))
