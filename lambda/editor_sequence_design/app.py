@@ -49,11 +49,11 @@ def rewrite_gb_visualization(tsv_file,key,jobid):
     print(f"rewrite {key} tsv ......")
     df = pd.read_csv(tsv_file,sep="\t")
     if key == "one_plasmid_system_gb":
-        df["sgRNA_ccdb_gb"] = f"result/{jobid}/{key}/" + df["sgRNA_ccdb_gb"]
+        df["SGRNA_CCDB_GB"] = f"result/{jobid}/{key}/" + df["SGRNA_CCDB_GB"]
         
     elif key == "two_plasmid_system_gb":
-        df["sgRNA_gb"] = f"result/{jobid}/{key}/" + df["sgRNA_gb"]
-        df["ccdb_gb"] = f"result/{jobid}/{key}/" + df["ccdb_gb"]
+        df["SGRNA_GB"] = f"result/{jobid}/{key}/" + df["SGRNA_GB"]
+        df["CCDB_GB"] = f"result/{jobid}/{key}/" + df["CCDB_GB"]
     df.to_csv(tsv_file,index=False,sep="\t")
     return tsv_file
   
