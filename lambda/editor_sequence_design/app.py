@@ -17,6 +17,8 @@ reference_bucket = os.environ["s3Reference"]
 
 s3 = boto3.resource('s3')
 
+S3ARGS = {'ACL': "public-read"}
+
 dynamodb = boto3.resource('dynamodb',region_name=os.environ['AWS_DEFAULT_REGION'])
 result_table = dynamodb.Table(os.environ['ddbResult'])
 
@@ -38,6 +40,68 @@ def download_s3_file(s3_file,workdir):
     )
     s3.Object(bucket, obj_key).download_file(local_file)
     return local_file
+
+def rewrite_gb_visualization(tsv_file,key,jobid):
+    """
+    
+    
+    """
+    print(f"rewrite {key} tsv ......")
+    df = pd.read_csv(tsv_file,sep="\t")
+    if key == "one_plasmid_system_gb":
+        df["sgRNA_ccdb_gb"] = f"result/{jobid}/{key}/" + df["sgRNA_ccdb_gb"]
+        
+    elif key == "two_plasmid_system_gb":
+        df["sgRNA_gb"] = f"result/{jobid}/{key}/" + df["sgRNA_gb"]
+        df["ccdb_gb"] = f"result/{jobid}/{key}/" + df["ccdb_gb"]
+    df.to_csv(tsv_file,index=False,sep="\t")
+    return tsv_file
+  
+def upload_plasmid_results(result_xlsx,jobid,workdir):
+    """_summary_
+
+    :param result_xlsx: _description_
+    :type result_xlsx: _type_
+    :param workdir: _description_
+    :type workdir: _type_
+    :raises ValueError: _description_
+    """
+    maps = {
+        "one_plasmid_design_result.xlsx" : "one_plasmid_system_gb",
+        "two_plasmid_design_result.xlsx" : "two_plasmid_system_gb",
+    }
+    print(f"upload files args : {result_xlsx} , {workdir}")
+    
+    filename = os.path.split(result_xlsx)[1]
+    key = maps.get(filename)
+    index = key.split('_')[0]
+    if key:
+        print(f'upload {key} files........')
+        gb_dir = os.path.join(workdir,key)
+        for i in os.listdir(gb_dir):
+            tmp_file = os.path.join(gb_dir,i)
+            tmp_s3_key = f"result/{jobid}/{key}/{i}"
+            # 重写csv
+            if tmp_file.endswith('gb_visualization.tsv'):
+                tmp_file = rewrite_gb_visualization(tmp_file,key,jobid)
+            # upload to s3
+            s3.meta.client.upload_file(tmp_file, result_bucket, tmp_s3_key,ExtraArgs=S3ARGS)
+            print(f"upload {i} ....")
+
+        # upload result xlsx
+        result_xlsx_key = f"result/{jobid}/{result_xlsx.split('/')[-1]}"
+        s3.meta.client.upload_file(result_xlsx, result_bucket, result_xlsx_key,ExtraArgs=S3ARGS)
+        print(f"upload {result_xlsx.split('/')[-1]} ....")
+        return {
+            index:{
+                "tsv":f"s3://{result_bucket}/result/{jobid}/{key}/gb_visualization.tsv",
+                "xlsx":f"s3://{result_bucket}/{result_xlsx_key}"
+            }
+        }
+        
+    else:
+        msg  = f"no plasmid result created, compute error. {result_xlsx}"
+        raise ValueError(msg)
 
 def lambda_handler(event,context):
     """
@@ -149,26 +213,27 @@ def lambda_handler(event,context):
                 event[key] = download_s3_file(event[key],workdir)
         
         response = edit_sd.main(event)
+        print('edit main response :',response)
         if isinstance(response,str):
             # 上传结果文件
             output_file = response
-            output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
-            s3.meta.client.upload_file(output_file, result_bucket, output_file_key,ExtraArgs={'ACL': "public-read"})
-            print(f'upload result file: {output_file_key} ')
+            data = upload_plasmid_results(output_file,jobid,workdir)
             return {
                 "statusCode":200,
-                "output_file":[f"s3://{result_bucket}/{output_file_key}"]
+                "output_file":data
             }
         elif isinstance(response,tuple):
-            output_file_list =[]
-            for output_file in response:
-                output_file_key = f"result/{jobid}/{output_file.split('/')[-1]}"
-                s3.meta.client.upload_file(output_file, result_bucket, output_file_key,ExtraArgs={'ACL': "public-read"})
-                print(f'upload result file: {output_file_key} ')
-                output_file_list.append(f"s3://{result_bucket}/{output_file_key}")
+            
+            data = {}
+            data.update(
+                upload_plasmid_results(response[0],jobid,workdir)
+            )
+            data.update(
+                upload_plasmid_results(response[1],jobid,workdir)
+            )
             return {
                 "statusCode":200,
-                "output_file":output_file_list
+                "output_file":data
             }
     except Exception as e:
         print(e)

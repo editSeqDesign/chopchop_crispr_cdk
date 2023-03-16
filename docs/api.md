@@ -219,9 +219,39 @@
 **参数示例**
 
 ```python
+# 查询edit
 {
-    "ids":[]
+    "ids":["cea2a2cb-a3f3-4c38-b147-df9461abf981"]
 }
 
+
+```
+
+
+**返回示例**
+```python
+
+# 查询edit 结果
+{
+    "statusCode":200,
+    "data":[
+        {
+            "status":"Finished",
+            "timestamp":"1678861294",
+            "jobid":"cea2a2cb-a3f3-4c38-b147-df9461abf981",
+            "result":{
+                "one":{
+                    "xlsx":"result/cea2a2cb-a3f3-4c38-b147-df9461abf981/one_plasmid_system_gb/one_plasmid_design_result.xlsx",
+                    "tsv":"cea2a2cb-a3f3-4c38-b147-df9461abf981/one_plasmid_system_gb/gb_visualization.tsv"
+                }
+            },
+            "error":"",
+            "type":"edit",
+            "params":{
+                "chopchop_jobid":"a373c204-f316-4696-a322-dd1a149aaeb8"
+            }
+        }
+    ]
+}
 
 ```

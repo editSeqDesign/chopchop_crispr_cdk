@@ -35,6 +35,12 @@ def lambda_handler(event,context):
             if res:
                 if 'output' in res:
                     del res['output']
+                if "params" in res:
+                    if res["type"] == "edit":
+                        chopchop_jobid = res["params"]["chopchop_jobid"]
+                        del res["params"]
+                        res["params"] = {}
+                        res["params"]["chopchop_jobid"] = chopchop_jobid
                 dictall.append(res)
         return {
             "statusCode":200,

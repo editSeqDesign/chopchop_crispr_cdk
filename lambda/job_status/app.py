@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-03-14 01:38:51
 LastEditors: wangruoyu
-LastEditTime: 2023-03-14 03:11:53
+LastEditTime: 2023-03-15 06:37:10
 Description: file content
 FilePath: /chopchop_crispr_cdk/lambda/job_status/app.py
 '''
@@ -75,12 +75,19 @@ def lambda_handler(event,context):
                 output_file = event["result"][module]['Payload']["output_file"]
                 output_dict[module] = output_file
                 print(output_file)
-                if module == "chopchop"  or module == "edit":
+                if module == "chopchop":
                     for i in output_file:
                         obj_key = "/".join(i.split('/')[3:])
                         print(i,obj_key)
                         result[f"file{index}"] = obj_key
                         index += 1
+                elif module == "edit":
+                    for i in output_file:
+                        print(i)
+                        result[i] = {}
+                        tmp_dict = output_file[i]
+                        for j in tmp_dict:
+                            result[i][j] = "/".join(tmp_dict[j].split("/")[3:])
             elif statusCode == 500:
                 msg += event["result"][module]['Payload']["msg"] +"; "
                 status = "Failed"
