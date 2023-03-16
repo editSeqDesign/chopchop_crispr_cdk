@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-02-16 05:24:52
 LastEditors: wangruoyu
-LastEditTime: 2023-03-13 05:37:13
+LastEditTime: 2023-03-16 08:18:58
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/lambda_construct.py
 '''
@@ -55,7 +55,7 @@ class LambdaConstruct(Construct):
         )
 
         # access to s3
-        TargetS3.get_s3_bucket("result").grant_read(self.lambda_role)
+        TargetS3.get_s3_bucket("reference").grant_read(self.lambda_role)
         TargetS3.get_s3_bucket("result").grant_read_write(self.lambda_role)
         TargetS3.get_s3_bucket("result").grant_put_acl(self.lambda_role)
 
