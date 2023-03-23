@@ -48,12 +48,16 @@ def rewrite_gb_visualization(tsv_file,key,jobid):
     """
     print(f"rewrite {key} tsv ......")
     df = pd.read_csv(tsv_file,sep="\t")
-    if key == "one_plasmid_system_gb":
-        df["SGRNA_CCDB_GB"] = f"result/{jobid}/{key}/" + df["SGRNA_CCDB_GB"]
+    df["genome_sequencing_gb"] = f"result/{jobid}/{key}_genome_sequencing_gb/" + df["genome_sequencing_gb"]
+    if key == "one_plasmid_system":
+        df["sgRNA_ccdb_gb"] = f"result/{jobid}/{key}_pcr_gb/" + df["sgRNA_ccdb_gb"]
+        df["plasmid_sequencing_gb"] = f"result/{jobid}/{key}_plasmid_sequencing_gb/" + df["plasmid_sequencing_gb"]
         
-    elif key == "two_plasmid_system_gb":
-        df["SGRNA_GB"] = f"result/{jobid}/{key}/" + df["SGRNA_GB"]
-        df["CCDB_GB"] = f"result/{jobid}/{key}/" + df["CCDB_GB"]
+    elif key == "two_plasmid_system":
+        df["sgRNA_gb"] = f"result/{jobid}/{key}_pcr_gb/" + df["sgRNA_gb"]
+        df["ccdb_gb"] = f"result/{jobid}/{key}_pcr_gb/" + df["ccdb_gb"]
+        df["sgRNA_plasmid_sequencing_gb"] = f"result/{jobid}/{key}_plasmid_sequencing_gb/" + df["sgRNA_plasmid_sequencing_gb"]
+        df["ccdb_plasmid_sequencing_gb"] = f"result/{jobid}/{key}_plasmid_sequencing_gb/" + df["ccdb_plasmid_sequencing_gb"]
     df.to_csv(tsv_file,index=False,sep="\t")
     return tsv_file
   
@@ -67,8 +71,8 @@ def upload_plasmid_results(result_xlsx,jobid,workdir):
     :raises ValueError: _description_
     """
     maps = {
-        "one_plasmid_design_result.xlsx" : "one_plasmid_system_gb",
-        "two_plasmid_design_result.xlsx" : "two_plasmid_system_gb",
+        "one_plasmid_design_result.xlsx" : "one_plasmid_system",
+        "two_plasmid_design_result.xlsx" : "two_plasmid_system",
     }
     print(f"upload files args : {result_xlsx} , {workdir}")
     
@@ -77,16 +81,23 @@ def upload_plasmid_results(result_xlsx,jobid,workdir):
     index = key.split('_')[0]
     if key:
         print(f'upload {key} files........')
-        gb_dir = os.path.join(workdir,key)
-        for i in os.listdir(gb_dir):
-            tmp_file = os.path.join(gb_dir,i)
-            tmp_s3_key = f"result/{jobid}/{key}/{i}"
-            # 重写csv
-            if tmp_file.endswith('gb_visualization.tsv'):
-                tmp_file = rewrite_gb_visualization(tmp_file,key,jobid)
-            # upload to s3
-            s3.meta.client.upload_file(tmp_file, result_bucket, tmp_s3_key,ExtraArgs=S3ARGS)
-            print(f"upload {i} ....")
+        # upload tsv
+        tsv = os.path.join(workdir,f"{key}_gb_visualization.tsv")
+        tmp_s3_key = f"result/{jobid}/{key}_gb_visualization.tsv"
+        tmp_file = rewrite_gb_visualization(tsv,key,jobid)
+        s3.meta.client.upload_file(tsv, result_bucket, tmp_s3_key,ExtraArgs=S3ARGS)
+        print(f"upload {tsv}")
+        
+        # upload gb
+        gb_dirs = ["pcr_gb","plasmid_sequencing_gb","genome_sequencing_gb"]
+        for gb_dir in gb_dirs:
+            gb_dir_path = os.path.join(workdir,f"{key}_{gb_dir}")
+            for i in os.listdir(gb_dir_path):
+                tmp_file = os.path.join(gb_dir_path,i)
+                tmp_s3_key = f"result/{jobid}/{key}_{gb_dir}/{i}"
+                # upload to s3
+                s3.meta.client.upload_file(tmp_file, result_bucket, tmp_s3_key,ExtraArgs=S3ARGS)
+                print(f"upload {i} ....")
 
         # upload result xlsx
         result_xlsx_key = f"result/{jobid}/{result_xlsx.split('/')[-1]}"
@@ -94,7 +105,7 @@ def upload_plasmid_results(result_xlsx,jobid,workdir):
         print(f"upload {result_xlsx.split('/')[-1]} ....")
         return {
             index:{
-                "tsv":f"s3://{result_bucket}/result/{jobid}/{key}/gb_visualization.tsv",
+                "tsv":f"s3://{result_bucket}/result/{jobid}/{key}_gb_visualization.tsv",
                 "xlsx":f"s3://{result_bucket}/{result_xlsx_key}"
             }
         }
