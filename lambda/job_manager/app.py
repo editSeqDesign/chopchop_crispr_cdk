@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-03-08 06:58:16
 LastEditors: wangruoyu
-LastEditTime: 2023-03-14 03:24:31
+LastEditTime: 2023-03-27 03:44:30
 Description: file content
 FilePath: /chopchop_crispr_cdk/lambda/job_manager/app.py
 '''
@@ -40,6 +40,7 @@ def ddb_item_dict(jobid,params,stype="chopchop"):
     dictall['timestamp'] = str(int(time.time()))
     dictall['type'] = stype
     dictall['params'] = params
+    dictall['sence'] = params["sence"]
     dictall['result'] = {}
     dictall['error'] = ''
     return dictall

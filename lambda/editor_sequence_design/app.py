@@ -201,20 +201,28 @@ def lambda_handler(event,context):
         event["edit_sequence_design_workdir"] = workdir
         # 根据chopchop_jobid获取chopchop_input，sgRNA_result_path，ref_genome
         # check chopchop_jobid 
-        chopchop_jobid = event["chopchop_jobid"]
-        response = result_table.get_item(Key={'jobid':chopchop_jobid })
-        if not 'Item' in response:
-            raise ValueError(f"The chopchop jobid {chopchop_jobid} is not exists.")
-        else:
-            if response['Item']['status'] != "Finished":
-                raise ValueError(f"The chopchop jobid {chopchop_jobid} is {response['Item']['status']}, can not be used to run edit sequence design")
+        if "chopchop_jobid" in event:
+            if event["scene"] != "both_sgRNA_primer":
+                raise ValueError(f"The chopchop jobid only support both_sgRNA_primer.")
+        if event["scene"] == "both_sgRNA_primer":
+            chopchop_jobid = event["chopchop_jobid"]
+            response = result_table.get_item(Key={'jobid':chopchop_jobid })
+            if not 'Item' in response:
+                raise ValueError(f"The chopchop jobid {chopchop_jobid} is not exists.")
+            else:
+                if response['Item']['status'] != "Finished":
+                    raise ValueError(f"The chopchop jobid {chopchop_jobid} is {response['Item']['status']}, can not be used to run edit sequence design")
 
-        event["chopchop_input"] = response['Item']['output']["data"]
-        event["sgRNA_result_path"] = response['Item']['output']["chopchop"][1]
-        event["ref_genome"] = response['Item']['params']["data"]["ref_genome"]
-        #下载数据 并重置参数
-        keys = ["chopchop_input","sgRNA_result_path","ref_genome",      "one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
-        ]
+            event["chopchop_input"] = response['Item']['output']["data"]
+            event["sgRNA_result_path"] = response['Item']['output']["chopchop"][1]
+            event["ref_genome"] = response['Item']['params']["data"]["ref_genome"]
+            #下载数据 并重置参数
+            keys = ["chopchop_input","sgRNA_result_path","ref_genome",      "one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
+            ]
+        else:
+            keys = ["chopchop_input","ref_genome","one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
+            ]
+            event["sgRNA_result_path"] = ""
         for key in keys:
             if event[key]:
                 print(key,event[key])

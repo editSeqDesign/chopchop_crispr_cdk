@@ -3,7 +3,7 @@
 Author: wangruoyu, wangry@tib.cas.cn
 Date: 2023-03-08 07:06:43
 LastEditors: wangruoyu
-LastEditTime: 2023-03-14 05:41:51
+LastEditTime: 2023-03-27 06:04:47
 Description: file content
 FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/stepfunctions_construct.py
 '''
@@ -48,6 +48,7 @@ class SfnConstruct(Construct):
                 payload= sfn.TaskInput.from_object({
                     "input_file_path": sfn.JsonPath.string_at("$.data.input_file_path"),
                     "ref_genome": sfn.JsonPath.string_at("$.data.ref_genome"),
+                    "scene": sfn.JsonPath.string_at("$.scene"),
                     "jobid": sfn.JsonPath.string_at("$.jobid"),
                 }),
                 result_path="$.Result.data"
@@ -99,13 +100,46 @@ class SfnConstruct(Construct):
 
         self.step_functions["chopchop"] = chopchop_statemachine
 
+        ############################################################
         # edit sfn
-        edit_task = sfn_tasks.LambdaInvoke(
+        
+        edit_error_task = sfn_tasks.LambdaInvoke(
                 self,
-                "run edit",
+                "edit job error",
+                lambda_function = TargetLambda.get_lambda_functions("job_status"),
+                payload= sfn.TaskInput.from_object({
+                    "error": sfn.JsonPath.string_at("$.error"),
+                    "jobid": sfn.JsonPath.string_at("$.jobid"),
+                    
+                }),
+                result_path="$.Result.job_status"
+            )
+        edit_dp_task = sfn_tasks.LambdaInvoke(
+                self,
+                "edit data_preprocessing",
+                lambda_function = TargetLambda.get_lambda_functions("data_preprocessing"),
+                payload= sfn.TaskInput.from_object({
+                    "input_file_path": sfn.JsonPath.string_at("$.input_file_path"),
+                    "ref_genome": sfn.JsonPath.string_at("$.ref_genome"),
+                    "scene": sfn.JsonPath.string_at("$.scene"),
+                    "jobid": sfn.JsonPath.string_at("$.jobid"),
+                }),
+                result_path="$.Result.data"
+            )
+        edit_dp_task.add_catch(
+            edit_error_task,
+            result_path = "$.error"
+        )
+        
+        
+        edit_only_task = sfn_tasks.LambdaInvoke(
+                self,
+                "run edit only primer",
                 lambda_function = TargetLambda.get_lambda_functions("editor_sequence_design"),
                 payload= sfn.TaskInput.from_object({
-                    "chopchop_jobid": sfn.JsonPath.string_at("$.chopchop_jobid"),
+                    "scene": sfn.JsonPath.string_at("$.scene"),
+                    "chopchop_input": sfn.JsonPath.string_at("$.Result.data.Payload.output_file"),
+                    "ref_genome": sfn.JsonPath.string_at("$.ref_genome"),
                     "one_plasmid_file_path": sfn.JsonPath.string_at("$.one_plasmid_file_path"),
                     "no_ccdb_plasmid": sfn.JsonPath.string_at("$.no_ccdb_plasmid"),
                     "no_sgRNA_plasmid": sfn.JsonPath.string_at("$.no_sgRNA_plasmid"),
@@ -131,6 +165,38 @@ class SfnConstruct(Construct):
                 result_path="$.Result.edit"
             )
         
+
+        edit_both_task = sfn_tasks.LambdaInvoke(
+                self,
+                "run edit both sgRNA primer",
+                lambda_function = TargetLambda.get_lambda_functions("editor_sequence_design"),
+                payload= sfn.TaskInput.from_object({
+                    "scene": sfn.JsonPath.string_at("$.scene"),
+                    "chopchop_jobid": sfn.JsonPath.string_at("$.chopchop_jobid"),
+                    "one_plasmid_file_path": sfn.JsonPath.string_at("$.one_plasmid_file_path"),
+                    "no_ccdb_plasmid": sfn.JsonPath.string_at("$.no_ccdb_plasmid"),
+                    "no_sgRNA_plasmid": sfn.JsonPath.string_at("$.no_sgRNA_plasmid"),
+                    "uha_dha_config": sfn.JsonPath.string_at("$.uha_dha_config"),
+                    "plasmid_label": sfn.JsonPath.string_at("$.plasmid_label"),
+                    "primer_json": sfn.JsonPath.string_at("$.primer_json"),
+                    "region_json": sfn.JsonPath.string_at("$.region_json"),
+                    "sgRNA_primer_json": sfn.JsonPath.string_at("$.sgRNA_primer_json"),
+                    "ccdb_primer_json": sfn.JsonPath.string_at("$.ccdb_primer_json"),
+                    "sgRNA_region_json": sfn.JsonPath.string_at("$.sgRNA_region_json"),
+                    "ccdb_region_json": sfn.JsonPath.string_at("$.ccdb_region_json"),
+                    "enzyme": sfn.JsonPath.string_at("$.enzyme"),
+                    "UHA_ARGS": sfn.JsonPath.string_at("$.UHA_ARGS"),
+                    "SEQ_ALTERED_ARGS": sfn.JsonPath.string_at("$.SEQ_ALTERED_ARGS"),
+                    "DHA_ARGS": sfn.JsonPath.string_at("$.DHA_ARGS"),
+                    "UP_SGRNA_ARGS": sfn.JsonPath.string_at("$.UP_SGRNA_ARGS"),
+                    "DOWN_SGRNA_ARGS": sfn.JsonPath.string_at("$.DOWN_SGRNA_ARGS"),
+                    "PLASMID_Q_ARGS": sfn.JsonPath.string_at("$.PLASMID_Q_ARGS"),
+                    "GENOME_Q_ARGS": sfn.JsonPath.string_at("$.GENOME_Q_ARGS"),
+                    "sgRNA_result": sfn.JsonPath.string_at("$.sgRNA_result"),
+                    "jobid": sfn.JsonPath.string_at("$.jobid"),
+                }),
+                result_path="$.Result.edit"
+            )
         edit_job_finish = sfn_tasks.LambdaInvoke(
                 self,
                 "edit job finished?",
@@ -143,9 +209,13 @@ class SfnConstruct(Construct):
                 result_path="$.Result.job_status"
             )
         
+        edit_dp_task.next(edit_only_task).next(edit_job_finish)
+        edit_both_task.next(edit_job_finish)
         # chain
-        edit_chain = sfn.Chain.start(edit_task) \
-                .next(edit_job_finish)
+        edit_chain = sfn.Chain.start(sfn.Choice(self, 'only or both?')
+                  .when(sfn.Condition.string_equals('$.scene', 'only_primer'), edit_dp_task)
+                  .when(sfn.Condition.string_equals('$.scene', 'both_sgRNA_primer'), edit_both_task))
+                
         # statemachine
         edit_statemachine = sfn.StateMachine(
             self,
