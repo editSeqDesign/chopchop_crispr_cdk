@@ -1,3 +1,12 @@
+#-*- coding:utf-8 -*-
+'''
+Author: wangruoyu, wangry@tib.cas.cn
+Date: 2023-03-27 08:04:24
+LastEditors: wangruoyu
+LastEditTime: 2023-03-27 08:04:32
+Description: file content
+FilePath: /chopchop_crispr_cdk/lambda/jobs/app.py
+'''
 import os
 import boto3
 import json
@@ -37,8 +46,11 @@ def lambda_handler(event,context):
                     del res['output']
                 if "params" in res:
                     if res["type"] == "edit":
-                        chopchop_jobid = res["params"]["chopchop_jobid"]
-                        del res["params"]
+                        if "chopchop_jobid" in res["params"]:
+                            chopchop_jobid = res["params"]["chopchop_jobid"]
+                            del res["params"]
+                        else:
+                            chopchop_jobid=""
                         res["params"] = {}
                         res["params"]["chopchop_jobid"] = chopchop_jobid
                 dictall.append(res)
