@@ -34,7 +34,7 @@ def lambda_handler(event,context):
     """
     event = {
         "ids":[]
-    }
+    }      
     """
     try:
         print(event)
