@@ -88,8 +88,9 @@
 | plasmid_label |  是    |     dict |   |
 | sgRNA_primer_json |  是    |     dict |   |
 | ccdb_primer_json |  是    |     dict |   |
-| sgRNA_region_json |  是    |     dict |   |
-| ccdb_region_json |  是    |     dict |   |
+| region_label |    是     |    string |    |
+| sgRNA_region_label |  是    |    string |   |
+| ccdb_region_label |  是    |     string |   |
 | enzyme |  是    |     dict |   |
 | UHA_ARGS |  是    |     dict |   |
 | SEQ_ALTERED_ARGS |  是    |     dict |   |
