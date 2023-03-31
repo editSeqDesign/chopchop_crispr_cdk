@@ -235,21 +235,15 @@
     "primer_json":{
 
     },
-    "region_json":{
-
-    },
+    "region_label":"",
     "sgRNA_primer_json":{
 
     },
     "ccdb_primer_json":{
 
     },
-    "sgRNA_region_json":{
-
-    },
-    "ccdb_region_json":{
-
-    },
+    "sgRNA_region_json":"",
+    "ccdb_region_json":"",
     "enzyme":{
         "enzyme_name":"BsaI",
         "gap_sequence":"A",
