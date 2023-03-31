@@ -13,7 +13,7 @@ import uuid
 import json
 import time
 
-import boto3
+import boto3  
 
 dynamodb = boto3.resource('dynamodb',region_name=os.environ['AWS_DEFAULT_REGION'])
 result_table = dynamodb.Table(os.environ['ddbResult'])
