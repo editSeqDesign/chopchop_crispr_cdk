@@ -242,14 +242,14 @@
     "ccdb_primer_json":{
 
     },
-    "sgRNA_region_json":"",
-    "ccdb_region_json":"",
+    "sgRNA_region_label":"",
+    "ccdb_region_label":"",
     "enzyme":{
         "enzyme_name":"BsaI",
         "gap_sequence":"A",
         "protection_sequence":"CCA"
     },
-    "UHA_ARGS":{
+    "UHA_ARGS":{  
         "PRIMER_OPT_TM":60,
         "PRIMER_MIN_TM":55,
         "PRIMER_MAX_TM":65,
