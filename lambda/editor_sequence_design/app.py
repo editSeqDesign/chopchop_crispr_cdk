@@ -71,8 +71,8 @@ def upload_plasmid_results(result_xlsx,jobid,workdir):
     :raises ValueError: _description_
     """
     maps = {
-        "one_plasmid_design_result.xlsx" : "one_plasmid_system",
-        "two_plasmid_design_result.xlsx" : "two_plasmid_system",
+        "one_plasmid_system_result.zip" : "one_plasmid_system",
+        "two_plasmid_system_result.zip" : "two_plasmid_system",
     }
     print(f"upload files args : {result_xlsx} , {workdir}")
     
