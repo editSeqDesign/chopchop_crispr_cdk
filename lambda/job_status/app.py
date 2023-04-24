@@ -75,6 +75,13 @@ def lambda_handler(event,context):
                 output_file = event["result"][module]['Payload']["output_file"]
                 output_dict[module] = output_file
                 print(output_file)
+
+                if module == 'data_preprocessing':
+                    if type(output_file)==list:
+                        temp_file = output_file[1]
+                        obj_key =  "/".join(temp_file.split('/')[3:])
+                        result[f"file{index}"] = obj_key
+
                 if module == "chopchop":
                     for i in output_file:
                         obj_key = "/".join(i.split('/')[3:])
@@ -93,6 +100,7 @@ def lambda_handler(event,context):
                 status = "Failed"
     
     # update ddb item
+
     print(update_item(event["jobid"],result,output_dict,status,msg))
 if __name__ == "__main__":
     pass

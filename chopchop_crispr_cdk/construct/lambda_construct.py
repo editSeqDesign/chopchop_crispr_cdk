@@ -9,7 +9,7 @@ FilePath: /chopchop_crispr_cdk/chopchop_crispr_cdk/construct/lambda_construct.py
 '''
 import os
 import configparser
-from aws_cdk import (
+from aws_cdk import (  
     aws_lambda as _lambda,
     aws_s3 as _s3,
     aws_iam as iam,
@@ -84,7 +84,7 @@ class LambdaConstruct(Construct):
             code = _lambda.Code.from_asset('lambda/data_preprocessing'),
             role=self.lambda_role,
             handler="app.lambda_handler",
-            timeout=Duration.seconds(30),
+            timeout=Duration.seconds(120),
             layers=[blastn_layer,biopython_pandas_layer],
             # ephemeral_storage_size = Size.mebibytes(1024),
             memory_size=128,
@@ -111,8 +111,6 @@ class LambdaConstruct(Construct):
                 "s3Reference":TargetS3.get_s3_bucket('reference').bucket_name,
             }
         )
-
-
 
 
          # chopchop

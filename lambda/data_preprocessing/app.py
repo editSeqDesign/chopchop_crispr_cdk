@@ -73,40 +73,65 @@ def lambda_handler(event,context):
     
     #下载数据 并重置参数
     event["input_file_path"] = download_s3_file(event["input_file_path"],workdir)
+
     if event["ref_genome"].startswith('reference/'):
         event["ref_genome"] = f"s3://{reference_bucket}/{event['ref_genome']}" 
     event["ref_genome"] = download_s3_file(event["ref_genome"],workdir)
     
+    print('begin:',event)
     output_file = data_pp.main(event)
     
     # 上传结果文件
-    output_file_key = f"result/{jobid}/data/{output_file.split('/')[-1]}"
-    s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
-    print(f'upload result file: {output_file_key} ')
-    
+    if type(output_file) == str:
+        output_file_key = f"result/{jobid}/data/{output_file.split('/')[-1]}"
+        s3.meta.client.upload_file(output_file, result_bucket, output_file_key)
+        print(f'upload result file: {output_file_key} ')
+    elif type(output_file) == list:
+        #1. editor_info
+        editor_info = output_file[0]
+        output_file_key1 = f"result/{jobid}/data/{editor_info.split('/')[-1]}"
+        s3.meta.client.upload_file(editor_info, result_bucket, output_file_key1)
+        print(f'upload result file: {output_file_key1} ')
+        #2. ref_genome
+        ref_genome = output_file[1]
+        output_file_key2 = f"result/{jobid}/data/{ref_genome.split('/')[-1]}"
+        s3.meta.client.upload_file(ref_genome, result_bucket, output_file_key2)
+        print(f'upload result file: {output_file_key2} ')
+
+
     # delete workdir
     os.system(f'rm -rf {workdir}')
     print(f"delete working dir: {workdir}")
     
-    return {
-        "statusCode":200,
-        "output_file":f"s3://{result_bucket}/{output_file_key}"
-    }
-    
+    if type(output_file) == str:
+         return {
+            "statusCode":200,
+            "output_file": f"s3://{result_bucket}/{output_file_key}"
+        }
+
+    elif type(output_file) == list:
+        return {
+            "statusCode":200,
+            "output_file": [f"s3://{result_bucket}/{output_file_key1}", f"s3://{result_bucket}/{output_file_key2}"]
+        }
+        
     
     
 if __name__ == "__main__":
     
     # s3文件测试
-    event = {
+    event1 = {
         "input_file_path":"s3://chopchop-prod/test/data_preprocessing/editor_info.csv",
         "ref_genome":"s3://chopchop-prod/test/data_preprocessing/GCA_000011325.1_ASM1132v1_genomic.fna",
-        "data_preprocessing_workdir":"/home/wang_ry/tmp/data_preprocessing/output/",
-        "uha_dha_config": {
-            "max_right_arm_seq_length": 1050,
-            "max_left_arm_seq_length": 1050,
-            "min_left_arm_seq_length": 1000,
-            "min_right_arm_seq_length": 1000
-        }
+        "data_preprocessing_workdir":"/home/wang_ry/tmp/data_preprocessing/output/"
     }
-    lambda_handler(event,{})
+    event2 = {
+        "input_file_path":"s3://chopchop-prod/test/data_preprocessing/4-20-input.csv",
+        "ref_genome":"s3://chopchop-prod/test/data_preprocessing/GCF_000005845.2_ASM584v2_genomic.gbff",
+        "data_preprocessing_workdir":"/home/wang_ry/tmp/data_preprocessing/output/",
+        "jobid":"123",
+        "scene":"both_sgRNA_primer"
+    }
+  
+
+    lambda_handler(event2,{})
