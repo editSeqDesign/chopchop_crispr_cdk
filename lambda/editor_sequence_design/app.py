@@ -38,6 +38,7 @@ def download_s3_file(s3_file,workdir):
         workdir,
         filename
     )
+    print(f"从{bucket,obj_key}下载{local_file}")
     s3.Object(bucket, obj_key).download_file(local_file)
     return local_file
 
@@ -190,7 +191,7 @@ def lambda_handler(event,context):
 
     }
     """
-    print(event)
+    print('event:',event)
     try:
         # 读写路径
         jobid = event['jobid']
@@ -205,32 +206,62 @@ def lambda_handler(event,context):
             if event["scene"] != "both_sgRNA_primer":
                 raise ValueError(f"The chopchop jobid only support both_sgRNA_primer.")
         if event["scene"] == "both_sgRNA_primer":
+            print("进入:both_sgRNA_primer")
             chopchop_jobid = event["chopchop_jobid"]
             response = result_table.get_item(Key={'jobid':chopchop_jobid })
+            print("进入:both_sgRNA_primer", response)   
             if not 'Item' in response:
                 raise ValueError(f"The chopchop jobid {chopchop_jobid} is not exists.")
             else:
                 if response['Item']['status'] != "Finished":
                     raise ValueError(f"The chopchop jobid {chopchop_jobid} is {response['Item']['status']}, can not be used to run edit sequence design")
 
-            event["chopchop_input"] = response['Item']['output']["data"]
+            if type(response['Item']['output']["data"]) == list:
+                event["chopchop_input"] = response['Item']['output']["data"][0]
+                event["ref_genome"] = response['Item']['output']["data"][1]
+
+            elif type(response['Item']['output']["data"]) == str:
+                event["chopchop_input"] = response['Item']['output']["data"]
+                event["ref_genome"] = response['Item']['params']["data"]["ref_genome"]
+
             event["sgRNA_result_path"] = response['Item']['output']["chopchop"][1]
-            event["ref_genome"] = response['Item']['params']["data"]["ref_genome"]
             #下载数据 并重置参数
             keys = ["chopchop_input","sgRNA_result_path","ref_genome",      "one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
             ]
         else:
-            keys = ["chopchop_input","ref_genome","one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid",
-            ]
-            event["sgRNA_result_path"] = ""
-        for key in keys:
-            if event[key]:
+
+            ############################################
+            if type(event['chopchop_input'])==list:
+                keys = ["chopchop_input","one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid"]
+                event["sgRNA_result_path"] = ""
+
+            else:
+                keys = ["chopchop_input","ref_genome","one_plasmid_file_path","no_ccdb_plasmid","no_sgRNA_plasmid"]
+                event["sgRNA_result_path"] = ""
+
+
+        print("进入reference/", 'ref_genome',reference_bucket)  
+
+        for key in keys:    
+            if event[key]:  
+
                 print(key,event[key])
+
                 if key == "ref_genome":
+                    print("进入reference/", key,reference_bucket)
                     if event["ref_genome"].startswith('reference/'):
                         event[key] = f"s3://{reference_bucket}/{event['ref_genome']}" 
-                event[key] = download_s3_file(event[key],workdir)
-        
+
+                if key == 'chopchop_input' and type(event[key]) == list:
+                    input_csv=event[key][0]
+                    genome_fna=event[key][1]
+                    event['chopchop_input'] = download_s3_file(input_csv,workdir)
+                    event['ref_genome'] =  download_s3_file(genome_fna,workdir)
+            
+                else:
+                    event[key] = download_s3_file(event[key],workdir)
+
+        print('进入主题：')
         response = edit_sd.main(event)
         print('edit main response :',response)
         if isinstance(response,str):
@@ -267,10 +298,11 @@ def lambda_handler(event,context):
     
 if __name__ == "__main__":
     event = {
-    "chopchop_jobid": "e952af24-0e18-4cdb-97b4-f6cee77e8ded",
-    "one_plasmid_file_path": "s3://chopchop-prod/public/1678777751777/single.gb",
+    "chopchop_jobid": "3364b1f6-df2a-4d28-a047-07a44207c012",
+    "one_plasmid_file_path": "s3://chopchop-prod/public/1682342580696/Plasmid.gb",
     "no_ccdb_plasmid": "",
     "no_sgRNA_plasmid": "",
+    "scene":"both_sgRNA_primer",
     "sgRNA_result": {
       "Cgl1386_327_18to15_sub": 1,
       "Cgl1436_1113_CAA_del": 1,

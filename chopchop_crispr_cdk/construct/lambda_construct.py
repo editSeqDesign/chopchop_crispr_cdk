@@ -84,10 +84,10 @@ class LambdaConstruct(Construct):
             code = _lambda.Code.from_asset('lambda/data_preprocessing'),
             role=self.lambda_role,
             handler="app.lambda_handler",
-            timeout=Duration.seconds(120),
+            timeout=Duration.seconds(600),
             layers=[blastn_layer,biopython_pandas_layer],
             # ephemeral_storage_size = Size.mebibytes(1024),
-            memory_size=128,
+            memory_size=1024,
             environment={
                 "s3Result":TargetS3.get_s3_bucket('result').bucket_name,
                 "s3Reference":TargetS3.get_s3_bucket('reference').bucket_name,

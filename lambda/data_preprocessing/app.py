@@ -9,7 +9,7 @@ FilePath: /chopchop_crispr_cdk/lambda/data_preprocessing/app.py
 '''
 import os
 import sys
-import uuid
+import uuid 
 
 import boto3
 import pandas as pd
