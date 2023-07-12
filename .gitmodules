@@ -1,10 +1,11 @@
 [submodule "lambda/data_preprocessing/data_preprocessing"]
-	path = lambda/data_preprocessing/data_preprocessing
-	url = http://172.16.25.29/database-network/data_preprocessing.git
+    path = lambda/data_preprocessing/data_preprocessing
+    url = git@github.com:editSeqDesign/data_preprocessing.git
 [submodule "lambda/editor_sequence_design/editor_sequence_design"]
-	path = lambda/editor_sequence_design/editor_sequence_design
-	url = http://172.16.25.29/database-network/edit_sequence_design.git
-
+    path = lambda/editor_sequence_design/editor_sequence_design
+    url = git@github.com:editSeqDesign/primer_desgin.git
 [submodule "lambda/chopchop"]
-	path = lambda/chopchop
-	url = http://172.16.25.29/database-network/chopchop.git
+    path = lambda/chopchop
+    url = git@github.com:editSeqDesign/chopchop.git
+[submodule "lambda/data_preprocessing"]
+	url = git@github.com:editSeqDesign/data_preprocessing.git
